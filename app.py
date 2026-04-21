@@ -1,10 +1,4 @@
-"""
-============================================================
-  Tesla Stock Forecasting — Streamlit Deployment
-  Models: GRU · Stacked LSTM · Bidirectional LSTM
-  Run:    streamlit run app.py
-============================================================
-"""
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -31,7 +25,7 @@ import io
 import os
 import pickle
 
-# ── PAGE CONFIG ─────────────────────────────────────────────────────────────
+
 st.set_page_config(
     page_title="Tesla LSTM Forecasting",
     page_icon="📈",
@@ -39,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ── CUSTOM CSS ───────────────────────────────────────────────────────────────
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
@@ -170,7 +164,6 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── CONSTANTS ────────────────────────────────────────────────────────────────
 SEED = 42
 np.random.seed(SEED)
 
@@ -189,7 +182,6 @@ MODEL_COLORS = {
     "Bidirectional LSTM": "#f78166",
 }
 
-# ── CORE PIPELINE FUNCTIONS ──────────────────────────────────────────────────
 
 @st.cache_data(show_spinner=False)
 def load_and_clean(file_bytes: bytes) -> pd.DataFrame:
@@ -279,7 +271,6 @@ def inverse_close(preds, scaler, n_features, target_idx):
     return scaler.inverse_transform(dummy)[:, target_idx]
 
 
-# ── PLOTLY CHART BUILDERS ────────────────────────────────────────────────────
 
 def chart_price_history(df: pd.DataFrame) -> go.Figure:
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
@@ -386,7 +377,6 @@ def chart_loss(histories: dict) -> go.Figure:
     return fig
 
 
-# ── SIDEBAR ──────────────────────────────────────────────────────────────────
 
 def render_sidebar():
     with st.sidebar:
@@ -429,12 +419,10 @@ def render_sidebar():
     return uploaded, selected_models, time_steps, epochs, batch_size, split
 
 
-# ── MAIN APP ─────────────────────────────────────────────────────────────────
 
 def main():
     uploaded, selected_models, time_steps, epochs, batch_size, split = render_sidebar()
 
-    # ── Hero header ──────────────────────────────────────────────────────────
     col_title, col_badge = st.columns([4, 1])
     with col_title:
         st.markdown("""
@@ -451,7 +439,6 @@ def main():
 
     st.divider()
 
-    # ── No file state ────────────────────────────────────────────────────────
     if uploaded is None:
         st.markdown("""
         <div style='text-align:center; padding: 4rem 2rem; color: #1e3a6e;'>
@@ -466,12 +453,10 @@ def main():
         """, unsafe_allow_html=True)
         return
 
-    # ── Load data ────────────────────────────────────────────────────────────
     with st.spinner("Loading data..."):
         df_raw  = load_and_clean(uploaded.read())
         df_feat = add_features(df_raw)
 
-    # ── Summary metrics ──────────────────────────────────────────────────────
     m1, m2, m3, m4, m5 = st.columns(5)
     m1.metric("Total rows",    f"{len(df_raw):,}")
     m2.metric("Date range",    f"{df_raw.index.min().year}–{df_raw.index.max().year}")
@@ -480,14 +465,11 @@ def main():
     pct = (df_raw['Close'].iloc[-1] - df_raw['Close'].iloc[0]) / df_raw['Close'].iloc[0] * 100
     m5.metric("Total return",  f"{pct:.0f}%", delta=f"{pct:.0f}%")
 
-    # ── Tabs ─────────────────────────────────────────────────────────────────
     tab_eda, tab_features, tab_train, tab_results = st.tabs([
-        "📊  EDA", "🔧  Features", "🚀  Train Models", "📈  Results"
+        "  EDA", "  Features", " Train Models", "  Results"
     ])
 
-    # ════════════════════════════════════════════════════════════════════════
-    # TAB 1 — EDA
-    # ════════════════════════════════════════════════════════════════════════
+    
     with tab_eda:
         st.markdown('<div class="section-title">Price History</div>', unsafe_allow_html=True)
         st.plotly_chart(chart_price_history(df_feat), use_container_width=True)
@@ -504,9 +486,6 @@ def main():
             st.dataframe(df_raw.tail(20).style.format("{:.2f}"),
                          use_container_width=True)
 
-    # ════════════════════════════════════════════════════════════════════════
-    # TAB 2 — FEATURES
-    # ════════════════════════════════════════════════════════════════════════
     with tab_features:
         st.markdown('<div class="section-title">Engineered Features</div>', unsafe_allow_html=True)
 
@@ -554,10 +533,6 @@ def main():
         c1.metric("Features", len(df_feat.columns))
         c2.metric("Rows after dropna", len(df_feat))
         c3.metric("Time steps (window)", time_steps)
-
-    # ════════════════════════════════════════════════════════════════════════
-    # TAB 3 — TRAIN
-    # ════════════════════════════════════════════════════════════════════════
     with tab_train:
         st.markdown('<div class="section-title">Training Configuration</div>', unsafe_allow_html=True)
 
@@ -582,7 +557,6 @@ def main():
 
         if run_btn or st.session_state.get("trained"):
             if run_btn:
-                # ── Preprocess ──────────────────────────────────────────
                 scaled, scaler, feature_cols, target_idx = preprocess(df_feat)
                 n_features = len(feature_cols)
                 X, y = create_sequences(scaled, target_idx, time_steps)
@@ -656,9 +630,7 @@ def main():
 
             st.success("All models trained. View results in the **Results** tab →")
 
-    # ════════════════════════════════════════════════════════════════════════
-    # TAB 4 — RESULTS
-    # ════════════════════════════════════════════════════════════════════════
+   
     with tab_results:
         if not st.session_state.get("trained"):
             st.info("Train models first in the **Train Models** tab.")
@@ -720,7 +692,6 @@ def main():
         )
 
 
-# ── ENTRY ────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     if "trained" not in st.session_state:
         st.session_state["trained"] = False
